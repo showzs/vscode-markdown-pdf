@@ -8,9 +8,9 @@ module.exports = {
     run: function() {
         // Create the mocha test
         const mocha = new Mocha({
-            ui: 'tdd'
+            ui: 'tdd',
+            color: true
         });
-        mocha.useColors(true);
 
         const testsRoot = path.resolve(__dirname, '..');
 
