@@ -204,15 +204,22 @@ function convertMarkdownToHtml(filename, type, text) {
 
   if (type !== 'html') {
     // convert the img src of the html
-    md.renderer.rules.html_block = function (tokens, idx) {
+    const defaultHtmlBlockRendarer = md.renderer.rules.html_block;
+    md.renderer.rules.html_block = function (tokens, idx, options, env, self) {
       var html = tokens[idx].content;
       var $ = cheerio.load(html);
+      let hasImg = false;
       $('img').each(function () {
         var src = $(this).attr('src');
         var href = convertImgPath(src, filename);
         $(this).attr('src', href);
+        hasImg = true;
       });
-      return $.html();
+      if (hasImg) {
+        return $.html();
+      } else {
+        return defaultHtmlBlockRendarer(tokens, idx, options, env, self)
+      }
     };
   }
 
