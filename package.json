@@ -2,8 +2,8 @@
   "name": "markdown-pdf",
   "displayName": "Markdown PDF",
   "description": "Convert Markdown to PDF",
-  "version": "1.4.4",
-  "publisher": "yzane",
+  "version": "0.1.0",
+  "publisher": "showzs",
   "icon": "images/icon.png",
   "engines": {
     "vscode": "^1.74.0"
@@ -22,7 +22,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/yzane/vscode-markdown-pdf.git"
+    "url": "https://github.com/showzs/vscode-markdown-pdf.git"
   },
   "activationEvents": [
     "onLanguage:markdown"
