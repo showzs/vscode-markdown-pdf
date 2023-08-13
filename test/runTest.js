@@ -1,7 +1,7 @@
 'use strict';
 
 const path = require('path');
-const runTests = require('vscode-test').runTests;
+const runTests = require('@vscode/test-electron').runTests;
 
 async function main() {
   try {
