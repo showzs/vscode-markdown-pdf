@@ -1,4 +1,6 @@
-# Markdown PDF
+# Markdown PDF(m)
+
+この拡張機能は[yzane/vscode-markdown-pdf](https://github.com/yzane/vscode-markdown-pdf)をフォークしたものです。
 
 この拡張機能は Markdown ファイルを pdf、html、png、jpeg ファイルに変換します。
 
@@ -576,13 +578,10 @@ Visual Studio Code の `files.autoGuessEncoding` オプションを使うと、�
 
 ## [Release Notes](CHANGELOG.md)
 
-### 0.1.0 (2023/08/14)
-
-based on https://github.com/yzane/vscode-markdown-pdf/releases/tag/1.4.4
-
-* Audit fix, and package update
-* 編集の必要がなければ HTML_block をそのまま維持します
-
+### 0.1.1 (2023/08/22)
+* cheerioのアップデートでによる HTML_block 編集処理の修正
+* marge https://github.com/yzane/vscode-markdown-pdf/pull/266   
+  Avoid TimeoutError: Navigation timeout of 30000 ms exceeded and TimeoutError: waiting for Page.printToPDF failed: timeout 30000ms exceeded
 
 ## License
 
