@@ -216,7 +216,7 @@ function convertMarkdownToHtml(filename, type, text) {
         hasImg = true;
       });
       if (hasImg) {
-        return $.html();
+        return $('body').html();
       } else {
         return defaultHtmlBlockRendarer(tokens, idx, options, env, self)
       }
