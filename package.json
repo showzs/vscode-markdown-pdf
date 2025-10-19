@@ -478,23 +478,21 @@
     "test": "node ./test/runTest.js"
   },
   "devDependencies": {
-    "@vscode/test-electron": "^2.3.4",
-    "glob": "^7.1.6",
+    "@vscode/test-electron": "^2.5.2",
+    "glob": "^7.2.3",
     "mocha": "^10.8.2",
     "removeNPMAbsolutePaths": "^2.0.0"
   },
   "dependencies": {
-    "cheerio": "^1.0.0-rc.12",
-    "d3": "^7.8.5",
+    "cheerio": "^1.1.2",
     "emoji-images": "^0.1.1",
     "gray-matter": "^4.0.2",
-    "highlight.js": "^11.8.0",
-    "markdown-it": "^13.0.1",
+    "highlight.js": "^11.11.1",
+    "markdown-it": "^13.0.2",
     "markdown-it-checkbox": "^1.1.0",
     "markdown-it-container": "^2.0.0",
     "markdown-it-emoji": "^1.4.0",
     "markdown-it-include": "^2.0.0",
-    "markdown-it-named-headers": "0.0.4",
     "markdown-it-plantuml": "^1.4.1",
     "mkdirp": "^1.0.3",
     "mustache": "^4.0.1",

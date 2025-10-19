@@ -252,11 +252,7 @@ function convertMarkdownToHtml(filename, type, text) {
   }
 
   // toc
-  // https://github.com/leff/markdown-it-named-headers
-  var options = {
-    slugify: Slug
-  }
-  md.use(require('markdown-it-named-headers'), options);
+  applyHeadingIds(md, Slug);
 
   // markdown-it-container
   // https://github.com/markdown-it/markdown-it-container
@@ -726,6 +722,43 @@ function readStyles(uri) {
   } catch (error) {
     showErrorMessage('readStyles()', error);
   }
+}
+
+function applyHeadingIds(md, slugify) {
+  const seen = Object.create(null);
+  const defaultRender = md.renderer.rules.heading_open || function (tokens, idx, options, env, self) {
+    return self.renderToken(tokens, idx, options);
+  };
+
+  md.renderer.rules.heading_open = function (tokens, idx, options, env, self) {
+    const token = tokens[idx];
+    if (token && !token.attrGet('id')) {
+      const inlineToken = tokens[idx + 1];
+      let text = '';
+      if (inlineToken && inlineToken.type === 'inline') {
+        text = inlineToken.content || '';
+        if (!text && Array.isArray(inlineToken.children)) {
+          text = inlineToken.children.map((child) => child.content || '').join('');
+        }
+      }
+
+      text = text.trim();
+      if (text) {
+        let slug = slugify(text);
+        if (slug) {
+          const baseSlug = slug;
+          if (Object.prototype.hasOwnProperty.call(seen, baseSlug)) {
+            seen[baseSlug] += 1;
+            slug = `${baseSlug}-${seen[baseSlug]}`;
+          } else {
+            seen[baseSlug] = 0;
+          }
+          token.attrSet('id', slug);
+        }
+      }
+    }
+    return defaultRender(tokens, idx, options, env, self);
+  };
 }
 
 /*
