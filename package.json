@@ -1,9 +1,9 @@
 {
   "name": "markdown-pdf-m",
   "displayName": "Markdown PDF(m)",
-  "description": "Convert Markdown to PDF",
-  "version": "0.1.1",
-  "publisher": "showzs",
+    "description": "Convert Markdown to PDF",
+    "version": "0.1.1",
+    "publisher": "showzs",
   "icon": "images/icon.png",
   "engines": {
     "vscode": "^1.74.0"
@@ -156,7 +156,7 @@
         "markdown-pdf.outputDirectoryRelativePathFile": {
           "type": "boolean",
           "default": false,
-          "description": "If markdown-pdf.outputDirectoryRelativePathFile option is set to true, the relative path set with markdown-pdf.styles is interpreted as relative from the file"
+          "description": "If markdown-pdf.outputDirectoryRelativePathFile option is set to true, the relative path set with markdown-pdf.outputDirectory is interpreted as relative from the file"
         },
         "markdown-pdf.styles": {
           "type": "array",
@@ -311,7 +311,7 @@
         },
         "markdown-pdf.headerTemplate": {
           "type": "string",
-          "default": "<div style=\"font-size: 9px; margin-left: 1cm;\"> <span class='title'></span></div> <div style=\"font-size: 9px; margin-left: auto; margin-right: 1cm; \"> <span class='date'></span></div>",
+          "default": "<div style=\"font-size: 9px; margin-left: 1cm;\"> <span class='title'></span></div> <div style=\"font-size: 9px; margin-left: auto; margin-right: 1cm; \">%%ISO-DATE%%</div>",
           "description": "pdf only. HTML template for the print header.",
           "scope": "resource"
         },
