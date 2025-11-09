@@ -1,9 +1,9 @@
 {
   "name": "markdown-pdf-m",
   "displayName": "Markdown PDF(m)",
-    "description": "Convert Markdown to PDF",
-    "version": "0.1.1",
-    "publisher": "showzs",
+  "description": "Convert Markdown to PDF",
+  "version": "0.2.0-beta1",
+  "publisher": "showzs",
   "icon": "images/icon.png",
   "engines": {
     "vscode": "^1.74.0"
@@ -58,6 +58,11 @@
       {
         "command": "extension.markdown-pdf.all",
         "title": "Markdown PDF: Export (all: pdf, html, png, jpeg)",
+        "group": "markdown-pdf"
+      },
+      {
+        "command": "extension.markdown-pdf.installBrowser",
+        "title": "Markdown PDF: Install configured browser",
         "group": "markdown-pdf"
       }
     ],
@@ -469,6 +474,35 @@
           "type": "string",
           "default": "https://unpkg.com/mermaid/dist/mermaid.min.js",
           "description": "mermaid server."
+        },
+        "markdown-pdf.browser.name": {
+          "type": "string",
+          "default": "chrome",
+          "description": "Browser name. chrome, chromium or chrome-headless-shell."
+        },
+        "markdown-pdf.browser.version": {
+          "type": "string",
+          "default": "",
+          "description": "Browser version. e.g. 113.0.5672.63"
+        },
+        "markdown-pdf.browser.channel": {
+          "type": "string",
+          "default": "",
+          "description": "Browser channel. e.g. stable, beta, dev, canary"
+        },
+        "markdown-pdf.browser.puppeteerCore": {
+          "type": "string",
+          "enum": [
+            "modern",
+            "legacy-v2"
+          ],
+          "default": "modern",
+          "description": "Puppeteer Core version to use. modern: puppeteer-core v24.x.x, legacy-v2: puppeteer-core v2.x.x"
+        },
+        "markdown-pdf.browser.cacheDir": {
+          "type": "string",
+          "default": "",
+          "description": "Browser cache directory. If not set, the default cache directory of puppeteer-core is used."
         }
       }
     }
@@ -484,6 +518,7 @@
     "removeNPMAbsolutePaths": "^2.0.0"
   },
   "dependencies": {
+    "@puppeteer/browsers": "^2.10.13",
     "cheerio": "^1.1.2",
     "emoji-images": "^0.1.1",
     "gray-matter": "^4.0.2",
@@ -496,7 +531,8 @@
     "markdown-it-plantuml": "^1.4.1",
     "mkdirp": "^1.0.3",
     "mustache": "^4.0.1",
-    "puppeteer-core": "^2.1.1",
+    "puppeteer-core": "^24.29.1",
+    "puppeteer-core-v2": "npm:puppeteer-core@^2.1.1",
     "rimraf": "^3.0.2"
   }
 }

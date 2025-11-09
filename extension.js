@@ -4,10 +4,23 @@ var path = require('path');
 var fs = require('fs');
 var url = require('url');
 var os = require('os');
-var INSTALL_CHECK = false;
+const {
+  install: installBrowser,
+  Browser,
+  detectBrowserPlatform,
+  resolveBuildId,
+  getInstalledBrowsers
+} = require('@puppeteer/browsers');
 
-function activate(context) {
-  init();
+const DEFAULT_PUPPETEER_VARIANT = 'modern';
+const DEFAULT_BROWSER_CACHE_DIR = path.join(os.homedir(), '.cache', 'markdown-pdf-m');
+const DEFAULT_MODERN_BROWSER_NAME = Browser.CHROME;
+const DEFAULT_LEGACY_BROWSER_NAME = Browser.CHROMIUM;
+let cachedBrowserEnvironment = null;
+let pendingBrowserEnvironment = null;
+
+async function activate(context) {
+  await init();
 
   var commands = [
     vscode.commands.registerCommand('extension.markdown-pdf.settings', async function () { await markdownPdf('settings'); }),
@@ -15,7 +28,8 @@ function activate(context) {
     vscode.commands.registerCommand('extension.markdown-pdf.html', async function () { await markdownPdf('html'); }),
     vscode.commands.registerCommand('extension.markdown-pdf.png', async function () { await markdownPdf('png'); }),
     vscode.commands.registerCommand('extension.markdown-pdf.jpeg', async function () { await markdownPdf('jpeg'); }),
-    vscode.commands.registerCommand('extension.markdown-pdf.all', async function () { await markdownPdf('all'); })
+    vscode.commands.registerCommand('extension.markdown-pdf.all', async function () { await markdownPdf('all'); }),
+    vscode.commands.registerCommand('extension.markdown-pdf.installBrowser', async function () { await installConfiguredBrowser(); })
   ];
   commands.forEach(function (command) {
     context.subscriptions.push(command);
@@ -33,6 +47,312 @@ exports.activate = activate;
 function deactivate() {
 }
 exports.deactivate = deactivate;
+
+const PUPPETEER_VARIANTS = {
+  modern: {
+    id: 'modern',
+    label: 'puppeteer-core@^24.26.1',
+    requireModule: () => require('puppeteer-core'),
+    requireRevisions: () => require('puppeteer-core/lib/cjs/puppeteer/revisions.js').PUPPETEER_REVISIONS
+  },
+  'legacy-v2': {
+    id: 'legacy-v2',
+    label: 'puppeteer-core@2.1.1',
+    requireModule: () => require('puppeteer-core-v2'),
+    requireRevisions: () => {
+      const pkg = require('puppeteer-core-v2/package.json');
+      const revision = pkg && pkg.puppeteer && pkg.puppeteer.chromium_revision;
+      if (!revision) {
+        return {};
+      }
+      return {
+        chromium: revision,
+        chrome: revision,
+        'chrome-headless-shell': revision
+      };
+    }
+  }
+};
+
+function safeTrim(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function pickFirstNonEmptyString(...values) {
+  for (const value of values) {
+    const trimmed = safeTrim(value);
+    if (trimmed.length > 0) {
+      return trimmed;
+    }
+  }
+  return '';
+}
+
+function resolvePuppeteerVariant(markdownPdfConfig) {
+  const config = markdownPdfConfig || vscode.workspace.getConfiguration('markdown-pdf');
+  const configPreference = safeTrim(config.get('browser.puppeteerCore'));
+  const preference = pickFirstNonEmptyString(configPreference, DEFAULT_PUPPETEER_VARIANT);
+  const key = Object.prototype.hasOwnProperty.call(PUPPETEER_VARIANTS, preference) ? preference : DEFAULT_PUPPETEER_VARIANT;
+  const variant = PUPPETEER_VARIANTS[key];
+  if (!variant.module) {
+    variant.module = variant.requireModule();
+  }
+  if (!variant.revisions) {
+    variant.revisions = variant.requireRevisions();
+  }
+  return variant;
+}
+
+function mapBrowserNameToEnum(name) {
+  const normalized = (name || '').toLowerCase();
+  switch (normalized) {
+    case 'chrome':
+    case 'google-chrome':
+      return Browser.CHROME;
+    case 'chromium':
+      return Browser.CHROMIUM;
+    case 'chrome-headless-shell':
+    case 'chrome_headless_shell':
+    case 'headless-shell':
+      return Browser.CHROMEHEADLESSSHELL;
+    default:
+      throw new Error(`Unsupported browser configured: ${name}. Supported values are "chrome", "chromium", or "chrome-headless-shell".`);
+  }
+}
+
+function normalizeBrowserOptions(markdownPdfConfig, puppeteerVariant) {
+  const config = markdownPdfConfig || vscode.workspace.getConfiguration('markdown-pdf');
+  const defaultName = puppeteerVariant && puppeteerVariant.id === 'legacy-v2' ? DEFAULT_LEGACY_BROWSER_NAME : DEFAULT_MODERN_BROWSER_NAME;
+  const nameInput = pickFirstNonEmptyString(config.get('browser.name'), defaultName);
+  const versionTag = pickFirstNonEmptyString(config.get('browser.version'));
+  const channelTag = pickFirstNonEmptyString(config.get('browser.channel'));
+  const requestedTag = pickFirstNonEmptyString(versionTag, channelTag);
+  const cacheDirConfig = pickFirstNonEmptyString(config.get('browser.cacheDir'));
+  const explicitExecutable = pickFirstNonEmptyString(config.get('executablePath'));
+
+  let browserEnum;
+  let browserName = nameInput || defaultName;
+  try {
+    browserEnum = mapBrowserNameToEnum(browserName);
+  } catch (error) {
+    showErrorMessage(error.message);
+    browserName = defaultName;
+    browserEnum = mapBrowserNameToEnum(browserName);
+  }
+
+  return {
+    browser: browserEnum,
+    browserName,
+    requestedTag,
+    cacheDir: cacheDirConfig || DEFAULT_BROWSER_CACHE_DIR,
+    explicitExecutable,
+    variantId: (puppeteerVariant && puppeteerVariant.id) || DEFAULT_PUPPETEER_VARIANT,
+    revisions: (puppeteerVariant && puppeteerVariant.revisions) || {}
+  };
+}
+
+function buildBrowserEnvironmentKey(options, variant) {
+  return JSON.stringify({
+    variant: variant.id,
+    browser: options.browser,
+    requestedTag: options.requestedTag,
+    cacheDir: options.cacheDir,
+    explicitExecutable: options.explicitExecutable
+  });
+}
+
+async function ensureBrowserEnvironment(markdownPdfConfig, ensureOptions) {
+  const options = ensureOptions || {};
+  const silent = options.silent === true;
+  const variant = resolvePuppeteerVariant(markdownPdfConfig);
+  const browserOptions = normalizeBrowserOptions(markdownPdfConfig, variant);
+  const cacheKey = buildBrowserEnvironmentKey(browserOptions, variant);
+
+  if (cachedBrowserEnvironment && cachedBrowserEnvironment.key === cacheKey && isExistsPath(cachedBrowserEnvironment.environment.executablePath)) {
+    return cachedBrowserEnvironment.environment;
+  }
+
+  if (pendingBrowserEnvironment && pendingBrowserEnvironment.key === cacheKey) {
+    return pendingBrowserEnvironment.promise;
+  }
+
+  const runner = (async () => {
+    try {
+      const executablePath = await resolveExecutablePathForVariant(browserOptions, variant);
+      const environment = {
+        module: variant.module,
+        executablePath,
+        variantId: variant.id,
+        browserName: browserOptions.browserName
+      };
+      cachedBrowserEnvironment = { key: cacheKey, environment };
+      return environment;
+    } finally {
+      if (pendingBrowserEnvironment && pendingBrowserEnvironment.key === cacheKey) {
+        pendingBrowserEnvironment = null;
+      }
+    }
+  })();
+
+  pendingBrowserEnvironment = { key: cacheKey, promise: runner };
+
+  try {
+    return await runner;
+  } catch (error) {
+    if (!silent) {
+      throw error;
+    }
+    console.warn('[Markdown PDF] Browser preparation deferred:', error);
+    return {
+      module: variant.module,
+      executablePath: null,
+      variantId: variant.id,
+      browserName: browserOptions.browserName
+    };
+  }
+}
+
+async function resolveExecutablePathForVariant(browserOptions, variant) {
+  const explicit = browserOptions.explicitExecutable;
+  if (explicit) {
+    if (!isExistsPath(explicit)) {
+      throw new Error(`Configured executablePath does not exist: ${explicit}`);
+    }
+    return explicit;
+  }
+
+  if (!variant.module) {
+    variant.module = variant.requireModule();
+  }
+
+  if (variant.id === 'legacy-v2') {
+    return await ensureLegacyBrowserExecutable(browserOptions, variant);
+  }
+
+  return await ensureModernBrowserExecutable(browserOptions, variant);
+}
+
+async function ensureLegacyBrowserExecutable(browserOptions, variant) {
+  const requestedRevision = browserOptions.requestedTag;
+  if (requestedRevision && !/^[0-9]+$/.test(requestedRevision)) {
+    throw new Error('Legacy puppeteer-core only supports numeric Chromium revisions. Please switch to the modern variant to request versions or channels.');
+  }
+
+  const revisions = browserOptions.revisions || {};
+  const fallbackRevision = revisions.chromium || revisions.chrome || revisions['chrome-headless-shell'];
+  const revision = requestedRevision || fallbackRevision;
+  if (!revision) {
+    throw new Error('Unable to determine a Chromium revision for the legacy puppeteer-core variant.');
+  }
+
+  const puppeteerModule = variant.module;
+  if (typeof puppeteerModule.createBrowserFetcher !== 'function') {
+    throw new Error('The legacy puppeteer-core variant does not expose createBrowserFetcher().');
+  }
+
+  const legacyCacheRoot = path.join(browserOptions.cacheDir, 'legacy-v2');
+  mkdir(legacyCacheRoot);
+  const fetcher = puppeteerModule.createBrowserFetcher({ path: legacyCacheRoot });
+  const revisionInfo = fetcher.revisionInfo(revision);
+  if (!revisionInfo.local || !isExistsPath(revisionInfo.executablePath)) {
+    setProxy();
+    await fetcher.download(revision);
+  }
+  return revisionInfo.executablePath;
+}
+
+async function ensureModernBrowserExecutable(browserOptions, variant) {
+  const platform = detectBrowserPlatform();
+  if (!platform) {
+    throw new Error('Unable to detect a supported browser platform for this system.');
+  }
+
+  const cacheDir = browserOptions.cacheDir || DEFAULT_BROWSER_CACHE_DIR;
+  const requestedTag = browserOptions.requestedTag;
+  let buildId;
+  if (requestedTag) {
+    if (/^[0-9]+$/.test(requestedTag)) {
+      buildId = requestedTag;
+    } else {
+      buildId = await resolveBuildId(browserOptions.browser, platform, requestedTag);
+    }
+  } else {
+    const revisions = browserOptions.revisions || {};
+    const revisionKey = browserOptions.browserName.toLowerCase();
+    buildId = revisions[revisionKey] || revisions[browserOptions.browser] || revisions[DEFAULT_MODERN_BROWSER_NAME] || '';
+    if (!buildId) {
+      const fallbackTag = browserOptions.browser === Browser.CHROME ? 'stable' : 'latest';
+      buildId = await resolveBuildId(browserOptions.browser, platform, fallbackTag);
+    }
+  }
+
+  const installedBrowsers = await getInstalledBrowsers({ cacheDir });
+  const existing = installedBrowsers.find((entry) => {
+    return entry.browser === browserOptions.browser && entry.platform === platform && entry.buildId === buildId;
+  });
+  if (existing && isExistsPath(existing.executablePath)) {
+    return existing.executablePath;
+  }
+
+  const progress = createStatusBarProgress(`[Markdown PDF] Downloading ${browserOptions.browserName}`);
+  try {
+    setProxy();
+    const installed = await installBrowser({
+      cacheDir,
+      browser: browserOptions.browser,
+      buildId,
+      buildIdAlias: requestedTag && requestedTag !== buildId ? requestedTag : undefined,
+      platform,
+      downloadProgressCallback: (downloadedBytes, totalBytes) => {
+        progress.report(downloadedBytes, totalBytes);
+      }
+    });
+    progress.complete(`[Markdown PDF] Downloaded ${browserOptions.browserName} (${buildId})`);
+    return installed.executablePath;
+  } finally {
+    progress.dispose();
+  }
+}
+
+function createStatusBarProgress(label) {
+  let disposable;
+  let lastPercent = -1;
+  const setMessage = (message, timeout) => {
+    if (disposable) {
+      disposable.dispose();
+    }
+    if (typeof timeout === 'number') {
+      disposable = vscode.window.setStatusBarMessage(message, timeout);
+    } else {
+      disposable = vscode.window.setStatusBarMessage(message);
+    }
+  };
+  return {
+    report(downloadedBytes, totalBytes) {
+      if (!totalBytes) {
+        setMessage(label);
+        return;
+      }
+      const percent = Math.floor((downloadedBytes / totalBytes) * 100);
+      if (percent === lastPercent) {
+        return;
+      }
+      lastPercent = percent;
+      setMessage(`${label} ${percent}%`);
+    },
+    complete(message) {
+      if (message) {
+        setMessage(message, 5000);
+      }
+    },
+    dispose() {
+      if (disposable) {
+        disposable.dispose();
+        disposable = undefined;
+      }
+    }
+  };
+}
 
 async function markdownPdf(option_type) {
 
@@ -369,16 +689,8 @@ function exportHtml(data, filename) {
  */
 function exportPdf(data, filename, type, uri) {
 
-  if (!INSTALL_CHECK) {
-    return;
-  }
-  if (!checkPuppeteerBinary()) {
-    showErrorMessage('Chromium or Chrome does not exist! \
-      See https://github.com/yzane/vscode-markdown-pdf#install');
-    return;
-  }
-
-  var StatusbarMessageTimeout = vscode.workspace.getConfiguration('markdown-pdf')['StatusbarMessageTimeout'];
+  const markdownPdfConfig = vscode.workspace.getConfiguration('markdown-pdf', uri);
+  var StatusbarMessageTimeout = markdownPdfConfig['StatusbarMessageTimeout'];
   vscode.window.setStatusBarMessage('');
   var exportFilename = getOutputDir(filename, uri);
 
@@ -394,18 +706,22 @@ function exportPdf(data, filename, type, uri) {
           return;
         }
 
-        const puppeteer = require('puppeteer-core');
+        const environment = await ensureBrowserEnvironment(markdownPdfConfig);
+        if (!environment || !environment.executablePath) {
+          throw new Error('Failed to resolve a browser executable path.');
+        }
+        const puppeteerModule = environment.module;
         // create temporary file
         var f = path.parse(filename);
         var tmpfilename = path.join(f.dir, f.name + '_tmp.html');
         exportHtml(data, tmpfilename);
         var options = {
-          executablePath: vscode.workspace.getConfiguration('markdown-pdf')['executablePath'] || puppeteer.executablePath(),
+          executablePath: environment.executablePath,
           args: ['--lang='+vscode.env.language, '--no-sandbox', '--disable-setuid-sandbox']
           // Setting Up Chrome Linux Sandbox
           // https://github.com/puppeteer/puppeteer/blob/master/docs/troubleshooting.md#setting-up-chrome-linux-sandbox
       };
-        const browser = await puppeteer.launch(options);
+        const browser = await puppeteerModule.launch(options);
         const page = await browser.newPage();
         await page.setDefaultTimeout(0);
         await page.goto(vscode.Uri.file(tmpfilename).toString(), { waitUntil: 'networkidle0' });
@@ -825,84 +1141,6 @@ function fixHref(resource, href) {
   }
 }
 
-function checkPuppeteerBinary() {
-  try {
-    // settings.json
-    var executablePath = vscode.workspace.getConfiguration('markdown-pdf')['executablePath'] || ''
-    if (isExistsPath(executablePath)) {
-      INSTALL_CHECK = true;
-      return true;
-    }
-
-    // bundled Chromium
-    const puppeteer = require('puppeteer-core');
-    executablePath = puppeteer.executablePath();
-    if (isExistsPath(executablePath)) {
-      return true;
-    } else {
-      return false;
-    }
-  } catch (error) {
-    showErrorMessage('checkPuppeteerBinary()', error);
-  }
-}
-
-/*
- * puppeteer install.js
- * https://github.com/GoogleChrome/puppeteer/blob/master/install.js
- */
-function installChromium() {
-  try {
-    vscode.window.showInformationMessage('[Markdown PDF] Installing Chromium ...');
-    var statusbarmessage = vscode.window.setStatusBarMessage('$(markdown) Installing Chromium ...');
-
-    // proxy setting
-    setProxy();
-
-    var StatusbarMessageTimeout = vscode.workspace.getConfiguration('markdown-pdf')['StatusbarMessageTimeout'];
-    const puppeteer = require('puppeteer-core');
-    const browserFetcher = puppeteer.createBrowserFetcher();
-    const revision = require(path.join(__dirname, 'node_modules', 'puppeteer-core', 'package.json')).puppeteer.chromium_revision;
-    const revisionInfo = browserFetcher.revisionInfo(revision);
-
-    // download Chromium
-    browserFetcher.download(revisionInfo.revision, onProgress)
-      .then(() => browserFetcher.localRevisions())
-      .then(onSuccess)
-      .catch(onError);
-
-    function onSuccess(localRevisions) {
-      console.log('Chromium downloaded to ' + revisionInfo.folderPath);
-      localRevisions = localRevisions.filter(revision => revision !== revisionInfo.revision);
-      // Remove previous chromium revisions.
-      const cleanupOldVersions = localRevisions.map(revision => browserFetcher.remove(revision));
-
-      if (checkPuppeteerBinary()) {
-        INSTALL_CHECK = true;
-        statusbarmessage.dispose();
-        vscode.window.setStatusBarMessage('$(markdown) Chromium installation succeeded!', StatusbarMessageTimeout);
-        vscode.window.showInformationMessage('[Markdown PDF] Chromium installation succeeded.');
-        return Promise.all(cleanupOldVersions);
-      }
-    }
-
-    function onError(error) {
-      statusbarmessage.dispose();
-      vscode.window.setStatusBarMessage('$(markdown) ERROR: Failed to download Chromium!', StatusbarMessageTimeout);
-      showErrorMessage('Failed to download Chromium! \
-        If you are behind a proxy, set the http.proxy option to settings.json and restart Visual Studio Code. \
-        See https://github.com/yzane/vscode-markdown-pdf#install', error);
-    }
-
-    function onProgress(downloadedBytes, totalBytes) {
-      var progress = parseInt(downloadedBytes / totalBytes * 100);
-      vscode.window.setStatusBarMessage('$(markdown) Installing Chromium ' + progress + '%' , StatusbarMessageTimeout);
-    }
-  } catch (error) {
-    showErrorMessage('installChromium()', error);
-  }
-}
-
 function showErrorMessage(msg, error) {
   vscode.window.showErrorMessage('ERROR: ' + msg);
   console.log('ERROR: ' + msg);
@@ -928,14 +1166,24 @@ function setBooleanValue(a, b) {
   }
 }
 
-function init() {
+async function init() {
   try {
-    if (checkPuppeteerBinary()) {
-      INSTALL_CHECK = true;
+    await ensureBrowserEnvironment(null, { silent: true });
+  } catch (error) {
+    console.warn('[Markdown PDF] Browser preflight failed:', error);
+  }
+}
+
+async function installConfiguredBrowser() {
+  try {
+    const config = vscode.workspace.getConfiguration('markdown-pdf');
+    const env = await ensureBrowserEnvironment(config, { silent: false });
+    if (env && env.executablePath && isExistsPath(env.executablePath)) {
+      vscode.window.showInformationMessage(`[Markdown PDF] Browser is ready: ${env.browserName} (${env.variantId})`);
     } else {
-      installChromium();
+      vscode.window.showWarningMessage('[Markdown PDF] Browser install completed but executable path was not resolved');
     }
   } catch (error) {
-    showErrorMessage('init()', error);
+    showErrorMessage('installConfiguredBrowser()', error);
   }
 }
