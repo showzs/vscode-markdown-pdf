@@ -1,8 +1,12 @@
 # Change Log
 
+## 0.2.1 (2025/11/16)
+* Add `Markdown PDF: Install configured browser` command so that you can download the configured Chromium/Chrome build ahead of time
+* Add browser management settings (`markdown-pdf.browser.name`, `.version`, `.channel`, `.cacheDir`, `.puppeteerCore`) for deterministic exports across machines
+* Switch to the `@puppeteer/browsers` downloader and the latest `puppeteer-core@24.29.1` runtime to keep pace with modern Chromium builds while still offering a legacy channel
+
 ## 0.2.0(2025/XX/XX)
 * merge https://github.com/yzane/vscode-markdown-pdf release 1.5.0
-
 
 ## 0.1.1 (2023/08/22)
 * fix edit HTML_block depending update cheerio
