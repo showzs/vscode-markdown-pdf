@@ -608,6 +608,10 @@ Visual Studio Code の `files.autoGuessEncoding` オプションを使うと、�
 
 ## [Release Notes](CHANGELOG.md)
 
+### 0.2.1 (2025/11/16)
+* `Markdown PDF: Install configured browser` コマンドを追加し、設定したブラウザを事前にダウンロードできるようになりました
+* `markdown-pdf.browser.*` 設定でブラウザ種別・バージョン・キャッシュディレクトリ・Puppeteer ランタイムを細かく指定できます
+
 ### 0.2.0 (2025/XX/XX)
 * merge https://github.com/yzane/vscode-markdown-pdf release 1.5.0
 

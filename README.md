@@ -129,15 +129,18 @@ OUTPUT
 
 ## Install
 
-Chromium download starts automatically when Markdown PDF is installed and Markdown file is first opened with Visual Studio Code.
+Markdown PDF(m) downloads a Chromium/Chrome build automatically the first time you export a document. The download is large (~170 MB macOS, ~282 MB Linux, ~280 MB Windows), so prefetching it ahead of a release can save time for your team.
 
-However, it is time-consuming depending on the environment because of its large size (~ 170Mb Mac, ~ 282Mb Linux, ~ 280Mb Win).
+Run the `Markdown PDF: Install configured browser` command from the Command Palette to download or update the browser you configured in settings without having to trigger a conversion. The command honors the new `markdown-pdf.browser.*` settings so you can:
 
-During downloading, the message `Installing Chromium` is displayed in the status bar.
+* pick a browser flavor with `markdown-pdf.browser.name`
+* pin a specific build via `markdown-pdf.browser.version` or channel via `markdown-pdf.browser.channel`
+* store downloads in a shared folder through `markdown-pdf.browser.cacheDir`
+* switch between the modern (`puppeteer-core@24.x`) and legacy (`puppeteer-core@2.x`) runtimes with `markdown-pdf.browser.puppeteerCore`
 
-If you are behind a proxy, set the `http.proxy` option to settings.json and restart Visual Studio Code.
+If you are behind a proxy, set the `http.proxy` option in your VS Code settings and restart.
 
-If the download is not successful or you want to avoid downloading every time you upgrade Markdown PDF, please specify the installed [Chrome](https://www.google.co.jp/chrome/) or 'Chromium' with [markdown-pdf.executablePath](#markdown-pdfexecutablepath) option.
+Prefer to reuse an already-installed Chrome or Chromium? Point `markdown-pdf.executablePath` at the executable and the extension will skip downloading entirely.
 
 <div class="page"/>
 
@@ -154,6 +157,7 @@ If the download is not successful or you want to avoid downloading every time yo
    * `markdown-pdf: Export (png)`
    * `markdown-pdf: Export (jpeg)`
    * `markdown-pdf: Export (all: pdf, html, png, jpeg)`
+  * `markdown-pdf: Install configured browser`
 
 ![usage1](images/usage1.gif)
 
@@ -176,6 +180,10 @@ If the download is not successful or you want to avoid downloading every time yo
 1. Restart Visual Studio Code
 1. Open the Markdown file
 1. Auto convert on save
+
+### Install configured browser command
+
+Use `Markdown PDF: Install configured browser` whenever you change the `markdown-pdf.browser.*` settings or want to ensure an offline machine already has the right Chromium/Chrome build. The command downloads the requested browser into the configured cache directory and reports progress in the status bar. Exports will reuse the cached build, so no extra download is required when you later run an export command.
 
 ## Extension Settings
 
@@ -207,6 +215,11 @@ If the download is not successful or you want to avoid downloading every time yo
 |[Markdown options](#markdown-options)|[markdown-pdf.breaks](#markdown-pdfbreaks)| |
 |[Emoji options](#emoji-options)|[markdown-pdf.emoji](#markdown-pdfemoji)| |
 |[Configuration options](#configuration-options)|[markdown-pdf.executablePath](#markdown-pdfexecutablepath)| |
+||[markdown-pdf.browser.name](#markdown-pdfbrowsername)| |
+||[markdown-pdf.browser.version](#markdown-pdfbrowserversion)| |
+||[markdown-pdf.browser.channel](#markdown-pdfbrowserchannel)| |
+||[markdown-pdf.browser.puppeteerCore](#markdown-pdfbrowserpuppeteercore)| |
+||[markdown-pdf.browser.cacheDir](#markdown-pdfbrowsercachedir)| |
 |[Common Options](#common-options)|[markdown-pdf.scale](#markdown-pdfscale)| |
 |[PDF options](#pdf-options)|[markdown-pdf.displayHeaderFooter](#markdown-pdfdisplayheaderfooter)|resource|
 ||[markdown-pdf.headerTemplate](#markdown-pdfheadertemplate)|resource|
@@ -389,6 +402,50 @@ If the download is not successful or you want to avoid downloading every time yo
 
 ```javascript
 "markdown-pdf.executablePath": "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
+```
+
+#### `markdown-pdf.browser.name`
+  - Browser flavor that should be installed when you run `Markdown PDF: Install configured browser`
+  - Allowed values: `chrome`, `chromium`, `chrome-headless-shell`
+  - Default: `chrome`
+
+```javascript
+"markdown-pdf.browser.name": "chromium"
+```
+
+#### `markdown-pdf.browser.version`
+  - Optional pinned version string (for example `123.0.6312.86`)
+  - Takes precedence over `markdown-pdf.browser.channel` when both are set
+  - Leave empty to let Puppeteer resolve the latest version for the selected channel
+
+```javascript
+"markdown-pdf.browser.version": "129.0.6668.58"
+```
+
+#### `markdown-pdf.browser.channel`
+  - Channel to track when no explicit version is provided (`stable`, `beta`, `dev`, `canary`)
+  - Useful for staying on a moving stream without editing the version number each time
+
+```javascript
+"markdown-pdf.browser.channel": "beta"
+```
+
+#### `markdown-pdf.browser.puppeteerCore`
+  - Chooses which Puppeteer runtime powers conversions
+  - `modern`: uses `puppeteer-core@24.x` (Chrome 120+)
+  - `legacy-v2`: uses `puppeteer-core@2.1.1` for older environments that still require the v2 protocol
+  - Default: `modern`
+
+```javascript
+"markdown-pdf.browser.puppeteerCore": "legacy-v2"
+```
+
+#### `markdown-pdf.browser.cacheDir`
+  - Directory where downloaded browsers should live; defaults to `~/.cache/markdown-pdf-m`
+  - Point this to a shared folder to reuse the same build across multiple workspaces or CI runs
+
+```javascript
+"markdown-pdf.browser.cacheDir": "D:/browsers/markdown-pdf"
 ```
 
 ### Common Options
@@ -613,6 +670,10 @@ Please use the following to insert a page break.
 
 
 ## [Release Notes](CHANGELOG.md)
+
+### 0.2.1 (2025/11/16)
+* Add `Markdown PDF: Install configured browser` command to pre-download the browser defined in your settings
+* Introduce the `markdown-pdf.browser.*` settings family to pin the browser flavor, build, cache directory, or Puppeteer runtime
 
 ### 0.2.0 (2025/XX/XX)
 * merge https://github.com/yzane/vscode-markdown-pdf release 1.5.0
