@@ -514,7 +514,7 @@
   "devDependencies": {
     "@vscode/test-electron": "^2.5.2",
     "glob": "^7.2.3",
-    "mocha": "^10.8.2",
+    "mocha": "^11.7.5",
     "removeNPMAbsolutePaths": "^2.0.0"
   },
   "dependencies": {
