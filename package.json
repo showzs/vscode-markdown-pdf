@@ -520,7 +520,6 @@
   "dependencies": {
     "cheerio": "^1.2.0",
     "emoji-images": "^0.1.1",
-    "gray-matter": "^4.0.2",
     "highlight.js": "^11.11.1",
     "markdown-it": "^14.2.0",
     "markdown-it-checkbox": "^1.1.0",
@@ -532,6 +531,7 @@
     "mustache": "^4.0.1",
     "puppeteer-core": "^25.5.0",
     "puppeteer-core-v2": "npm:puppeteer-core@^2.1.1",
-    "rimraf": "^3.0.2"
+    "rimraf": "^3.0.2",
+    "yaml": "^2.8.1"
   }
 }

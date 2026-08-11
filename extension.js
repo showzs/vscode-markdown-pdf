@@ -468,8 +468,7 @@ function isMarkdownPdfOnSaveExclude() {
  * convert markdown to html (markdown-it)
  */
 function convertMarkdownToHtml(filename, type, text) {
-  var grayMatter = require("gray-matter");
-  var matterParts = grayMatter(text);
+  var matterParts = parseFrontMatter(text);
 
   try {
     try {
@@ -617,6 +616,24 @@ function convertMarkdownToHtml(filename, type, text) {
     showErrorMessage('convertMarkdownToHtml()', error);
   }
 }
+
+function parseFrontMatter(text) {
+  var matterParts = {
+    data: {},
+    content: text
+  };
+  var frontMatter = /^---\r?\n([\s\S]*?)^---(?:\r?\n|$)/m.exec(text);
+
+  if (!frontMatter) {
+    return matterParts;
+  }
+
+  var yaml = require('yaml');
+  matterParts.data = yaml.parse(frontMatter[1]) || {};
+  matterParts.content = text.slice(frontMatter[0].length);
+  return matterParts;
+}
+exports.parseFrontMatter = parseFrontMatter;
 
 /*
  * https://github.com/microsoft/vscode/blob/ca4ceeb87d4ff935c52a7af0671ed9779657e7bd/extensions/markdown-language-features/src/slugify.ts#L26
