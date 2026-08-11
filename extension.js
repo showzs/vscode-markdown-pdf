@@ -51,9 +51,9 @@ exports.deactivate = deactivate;
 const PUPPETEER_VARIANTS = {
   modern: {
     id: 'modern',
-    label: 'puppeteer-core@^24.26.1',
+    label: 'puppeteer-core@^25.3.0',
     requireModule: () => require('puppeteer-core'),
-    requireRevisions: () => require('puppeteer-core/lib/cjs/puppeteer/revisions.js').PUPPETEER_REVISIONS
+    requireRevisions: () => require('puppeteer-core/lib/puppeteer/revisions.js').PUPPETEER_REVISIONS
   },
   'legacy-v2': {
     id: 'legacy-v2',

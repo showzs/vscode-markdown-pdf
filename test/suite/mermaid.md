@@ -1,3 +1,6 @@
+---
+title: "markdown for test for vscode-markdown-pdf-m"
+---
 # Mermaid
 
 ```mermaid
