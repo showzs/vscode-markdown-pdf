@@ -643,7 +643,7 @@ MIT
 * [gmunguia/markdown-it-plantuml](https://github.com/gmunguia/markdown-it-plantuml)
 * [camelaissani/markdown-it-include](https://github.com/camelaissani/markdown-it-include)
 * [mermaid-js/mermaid](https://github.com/mermaid-js/mermaid)
-* [jonschlinkert/gray-matter](https://github.com/jonschlinkert/gray-matter)
+* [eemeli/yaml](https://github.com/eemeli/yaml)
 
 and
 
