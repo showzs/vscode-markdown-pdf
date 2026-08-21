@@ -136,7 +136,7 @@ Run the `Markdown PDF: Install configured browser` command from the Command Pale
 * pick a browser flavor with `markdown-pdf.browser.name`
 * pin a specific build via `markdown-pdf.browser.version` or channel via `markdown-pdf.browser.channel`
 * store downloads in a shared folder through `markdown-pdf.browser.cacheDir`
-* switch between the modern (`puppeteer-core@24.x`) and legacy (`puppeteer-core@2.x`) runtimes with `markdown-pdf.browser.puppeteerCore`
+* use the current `puppeteer-core` runtime with configurable browser downloads
 
 If you are behind a proxy, set the `http.proxy` option in your VS Code settings and restart.
 
@@ -218,7 +218,6 @@ Use `Markdown PDF: Install configured browser` whenever you change the `markdown
 ||[markdown-pdf.browser.name](#markdown-pdfbrowsername)| |
 ||[markdown-pdf.browser.version](#markdown-pdfbrowserversion)| |
 ||[markdown-pdf.browser.channel](#markdown-pdfbrowserchannel)| |
-||[markdown-pdf.browser.puppeteerCore](#markdown-pdfbrowserpuppeteercore)| |
 ||[markdown-pdf.browser.cacheDir](#markdown-pdfbrowsercachedir)| |
 |[Common Options](#common-options)|[markdown-pdf.scale](#markdown-pdfscale)| |
 |[PDF options](#pdf-options)|[markdown-pdf.displayHeaderFooter](#markdown-pdfdisplayheaderfooter)|resource|
@@ -428,16 +427,6 @@ Use `Markdown PDF: Install configured browser` whenever you change the `markdown
 
 ```javascript
 "markdown-pdf.browser.channel": "beta"
-```
-
-#### `markdown-pdf.browser.puppeteerCore`
-  - Chooses which Puppeteer runtime powers conversions
-  - `modern`: uses `puppeteer-core@24.x` (Chrome 120+)
-  - `legacy-v2`: uses `puppeteer-core@2.1.1` for older environments that still require the v2 protocol
-  - Default: `modern`
-
-```javascript
-"markdown-pdf.browser.puppeteerCore": "legacy-v2"
 ```
 
 #### `markdown-pdf.browser.cacheDir`
