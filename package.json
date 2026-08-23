@@ -2,7 +2,7 @@
   "name": "markdown-pdf-m",
   "displayName": "Markdown PDF(m)",
   "description": "Convert Markdown to PDF",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "publisher": "showzs",
   "icon": "images/icon.png",
   "engines": {
@@ -523,5 +523,9 @@
     "puppeteer-core": "^25.8.0",
     "rimraf": "^3.0.2",
     "yaml": "^2.8.1"
+  },
+  "overrides": {
+    "diff": "^8.0.4",
+    "serialize-javascript": "^7.0.6"
   }
 }

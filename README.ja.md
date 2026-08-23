@@ -1,6 +1,7 @@
 # Markdown PDF(m)
 
-この拡張機能は[yzane/vscode-markdown-pdf](https://github.com/yzane/vscode-markdown-pdf)をフォークしたものです。
+この拡張機能は[yzane/vscode-markdown-pdf](https://github.com/yzane/vscode-markdown-pdf)の古い1.5.0のコードからフォークしたものです。
+フォーク元プロジェクトのバージョン2.0以降の新しいコードへ追随する予定はありません。
 
 この拡張機能は Markdown ファイルを pdf、html、png、jpeg ファイルに変換します。
 

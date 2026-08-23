@@ -2,6 +2,9 @@
 
 ## 0.3.0 (2026/08/23)
 * Remove the legacy `puppeteer-core@2.1.1` runtime and update the modern runtime to `puppeteer-core@25.8.0`
+* Replace `gray-matter` with `yaml` for front matter parsing
+* Update `markdown-it` and other dependencies to their latest compatible versions
+* Add npm dependency overrides for `diff` and `serialize-javascript`
 
 ## 0.2.1 (2025/11/16)
 * Add `Markdown PDF: Install configured browser` command so that you can download the configured Chromium/Chrome build ahead of time
