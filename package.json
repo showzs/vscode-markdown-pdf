@@ -490,15 +490,6 @@
           "default": "",
           "description": "Browser channel. e.g. stable, beta, dev, canary"
         },
-        "markdown-pdf.browser.puppeteerCore": {
-          "type": "string",
-          "enum": [
-            "modern",
-            "legacy-v2"
-          ],
-          "default": "modern",
-          "description": "Puppeteer Core version to use. modern: puppeteer-core v24.x.x, legacy-v2: puppeteer-core v2.x.x"
-        },
         "markdown-pdf.browser.cacheDir": {
           "type": "string",
           "default": "",
@@ -529,8 +520,7 @@
     "markdown-it-plantuml": "^1.4.1",
     "mkdirp": "^1.0.3",
     "mustache": "^4.0.1",
-    "puppeteer-core": "^25.5.0",
-    "puppeteer-core-v2": "npm:puppeteer-core@^2.1.1",
+    "puppeteer-core": "^25.8.0",
     "rimraf": "^3.0.2",
     "yaml": "^2.8.1"
   }
