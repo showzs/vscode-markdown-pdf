@@ -22,9 +22,9 @@ suite('Extension Test Suite', () => {
         await vscode.window.showTextDocument(textDocument);
         await vscode.commands.executeCommand('extension.markdown-pdf.all');
 
-        // rimraf.sync(path.resolve(__dirname, 'mermaid.pdf'));
-        // rimraf.sync(path.resolve(__dirname, 'mermaid.jpeg'));
-        // rimraf.sync(path.resolve(__dirname, 'mermaid.png'));
-        // rimraf.sync(path.resolve(__dirname, 'mermaid.html'));
+        rimraf.sync(path.resolve(__dirname, 'mermaid.pdf'));
+        rimraf.sync(path.resolve(__dirname, 'mermaid.jpeg'));
+        rimraf.sync(path.resolve(__dirname, 'mermaid.png'));
+        rimraf.sync(path.resolve(__dirname, 'mermaid.html'));
     });
 });
