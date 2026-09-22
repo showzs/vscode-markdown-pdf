@@ -473,7 +473,8 @@ function convertMarkdownToHtml(filename, type, text) {
       statusbarmessage.dispose();
       showErrorMessage('markdown-it-emoji:options', error);
     }
-    md.use(require('markdown-it-emoji'), options);
+    var emojiPlugin = require('markdown-it-emoji');
+    md.use(emojiPlugin.full, options);
     md.renderer.rules.emoji = function (token, idx) {
       var emoji = token[idx].markup;
       var emojipath = path.join(__dirname, 'node_modules', 'emoji-images', 'pngs', emoji + '.png');
@@ -532,6 +533,7 @@ function convertMarkdownToHtml(filename, type, text) {
     showErrorMessage('convertMarkdownToHtml()', error);
   }
 }
+exports.convertMarkdownToHtml = convertMarkdownToHtml;
 
 function parseFrontMatter(text) {
   var matterParts = {

@@ -4,6 +4,12 @@ const assert = require('assert');
 const extension = require('../../extension');
 
 suite('Front Matter Test Suite', () => {
+    test('renders emoji shortcodes as embedded images', () => {
+        const html = extension.convertMarkdownToHtml(__filename, 'html', ':smile:');
+
+        assert.match(html, /<img class="emoji" alt="smile" src="data:image\/png;base64,[A-Za-z0-9+/=]+" \/>/);
+    });
+
     test('extracts YAML front matter and Markdown content', () => {
         const result = extension.parseFrontMatter('---\r\nbreaks: true\r\n---\r\n# Heading\r\n');
 
