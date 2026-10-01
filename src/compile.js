@@ -1,27 +1,30 @@
 #!/usr/bin/env node
 
-var fs  = require('fs');
+var fs = require('fs');
 var path = require('path');
-var rimraf = require('rimraf')
 var removeNPMAbsolutePaths = require('removeNPMAbsolutePaths');
 
-// Delete the unnecessary files in order to reduce the size of the package
-console.log('delete file...');
-deleteFile(path.join(__dirname, '..', 'node_modules', 'emoji-images', 'json'));
-deleteFile(path.join(__dirname, '..', 'node_modules', 'puppeteer-core', '.local-chromium'));
+async function main() {
+  // Delete the unnecessary files in order to reduce the size of the package
+  console.log('delete file...');
+  await Promise.all([
+    path.join(__dirname, '..', 'node_modules', 'emoji-images', 'json'),
+    path.join(__dirname, '..', 'node_modules', 'puppeteer-core', '.local-chromium')
+  ].map(async dir => {
+    await fs.promises.rm(dir, { recursive: true, force: true });
+    console.log(dir);
+  }));
 
-removeNPMAbsolutePaths(path.join(__dirname, '..', 'node_modules'), { force: true, fields: ['_where', '_args']})
-  .then(results => results.forEach(result => {
+  const results = await removeNPMAbsolutePaths(path.join(__dirname, '..', 'node_modules'), { force: true, fields: ['_where', '_args'] });
+  results.forEach(result => {
     // Print only information about files that couldn't be processed
     if (!result.success) {
-      console.log(result.err.message);
+      console.error(result.err.message);
     }
-  }))
-  .catch(err => console.log(err.message));
-
-function deleteFile (dir) {
-  rimraf(dir, function(err) {
-    if (err) throw err;
-    console.log(dir);
   });
 }
+
+main().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});

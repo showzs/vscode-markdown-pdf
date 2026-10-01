@@ -2,10 +2,10 @@
 
 const path = require('path');
 const Mocha = require('mocha');
-const glob = require('glob');
+const { glob } = require('glob');
 
 module.exports = {
-    run: function() {
+    run: async function() {
         // Create the mocha test
         const mocha = new Mocha({
             ui: 'tdd',
@@ -13,16 +13,10 @@ module.exports = {
         });
 
         const testsRoot = path.resolve(__dirname, '..');
+        const files = await glob('**/*.test.js', { cwd: testsRoot });
+        files.forEach(f => mocha.addFile(path.resolve(testsRoot, f)));
 
         return new Promise((c, e) => {
-            glob('**/**.test.js', { cwd: testsRoot }, (err, files) => {
-            if (err) {
-                return e(err);
-            }
-
-            // Add files to the test suite
-            files.forEach(f => mocha.addFile(path.resolve(testsRoot, f)));
-
             try {
                 // Run the mocha test
                 mocha.run(failures => {
@@ -35,7 +29,6 @@ module.exports = {
             } catch (err) {
                 e(err);
             }
-            });
         });
     }
 }

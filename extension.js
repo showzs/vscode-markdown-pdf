@@ -812,8 +812,7 @@ function isExistsDir(dirname) {
 }
 
 function deleteFile (path) {
-  var rimraf = require('rimraf')
-  rimraf.sync(path);
+  fs.rmSync(path, { recursive: true, force: true });
 }
 
 function getOutputDir(filename, resource) {
@@ -863,11 +862,7 @@ function getOutputDir(filename, resource) {
 }
 
 function mkdir(path) {
-  if (isExistsDir(path)) {
-    return;
-  }
-  var mkdirp = require('mkdirp');
-  return mkdirp.sync(path);
+  return fs.mkdirSync(path, { recursive: true });
 }
 
 function readFile(filename, encode) {
