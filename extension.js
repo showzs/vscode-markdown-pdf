@@ -414,9 +414,12 @@ function convertMarkdownToHtml(filename, type, text) {
           return '<pre class="hljs"><code><div>' + str + '</div></code></pre>';
         }
       });
+      md.use(require('@vscode/markdown-it-katex').default, {
+        katex: require('katex')
+      });
     } catch (error) {
       statusbarmessage.dispose();
-      showErrorMessage('require(\'markdown-it\')', error);
+      showErrorMessage('markdown-it/KaTeX initialization', error);
     }
 
   // convert the img src of the markdown
@@ -579,7 +582,7 @@ function makeHtml(data, uri) {
   try {
     // read styles
     var style = '';
-    style += readStyles(uri);
+    style += readStyles(uri, /class="katex[ "-]/.test(data));
 
     // get title
     var title = path.basename(uri.fsPath);
@@ -606,6 +609,7 @@ function makeHtml(data, uri) {
     showErrorMessage('makeHtml()', error);
   }
 }
+exports.makeHtml = makeHtml;
 
 /*
  * export a html to a html file
@@ -929,7 +933,27 @@ function makeCss(filename) {
   }
 }
 
-function readStyles(uri) {
+function makeKatexCss() {
+  var katexDistPath = path.join(__dirname, 'node_modules', 'katex', 'dist');
+  var css = fs.readFileSync(path.join(katexDistPath, 'katex.min.css'), 'utf-8');
+  css = css.replace(/url\(fonts\/([^)]+)\)/g, function (match, filename) {
+    var mimeTypes = {
+      '.ttf': 'font/ttf',
+      '.woff': 'font/woff',
+      '.woff2': 'font/woff2'
+    };
+    var mimeType = mimeTypes[path.extname(filename).toLowerCase()];
+    if (!mimeType) {
+      throw new Error('Unsupported KaTeX font format: ' + filename);
+    }
+    var fontPath = path.join(katexDistPath, 'fonts', filename);
+    var font = fs.readFileSync(fontPath).toString('base64');
+    return 'url(data:' + mimeType + ';base64,' + font + ')';
+  });
+  return '\n<style>\n' + css + '\n</style>\n';
+}
+
+function readStyles(uri, includeKatex) {
   try {
     var includeDefaultStyles;
     var style = '';
@@ -974,6 +998,11 @@ function readStyles(uri) {
     if (includeDefaultStyles) {
       filename = path.join(__dirname, 'styles', 'markdown-pdf.css');
       style += makeCss(filename);
+    }
+
+    // KaTeX styles and fonts are embedded only when the document contains math.
+    if (includeKatex) {
+      style += makeKatexCss();
     }
 
     // 5. read the style of the markdown-pdf.styles settings.
