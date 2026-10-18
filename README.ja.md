@@ -36,12 +36,25 @@
 以下の機能をサポートしています。
 * [Syntax highlighting](https://highlightjs.org/static/demo/)
 * [emoji](https://www.webfx.com/tools/emoji-cheat-sheet/)
+* [KaTeX](https://katex.org/) による数式表示（インライン・ブロック）
 * [markdown-it-checkbox](https://github.com/mcecot/markdown-it-checkbox)
 * [markdown-it-container](https://github.com/markdown-it/markdown-it-container)
 * [markdown-it-include](https://github.com/camelaissani/markdown-it-include)
 * [PlantUML](https://plantuml.com/)
   * [markdown-it-plantuml](https://github.com/gmunguia/markdown-it-plantuml)
 * [mermaid](https://mermaid-js.github.io/mermaid/)
+
+### KaTeX
+
+VS Code の Markdown プレビューと同様に、インライン数式とブロック数式を KaTeX で表示します。
+
+```markdown
+インライン: $\sqrt{3x-1}+(1+x)^2$
+
+$$
+\frac{a}{b}
+$$
+```
 
 サンプルファイル
  * [pdf](sample/README.pdf)

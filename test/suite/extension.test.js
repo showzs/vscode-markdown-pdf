@@ -1,7 +1,7 @@
 'use strict';
 
-// const assert = require('assert');
 const before = require('mocha').before;
+const assert = require('assert');
 const path = require('path');
 const fs = require('fs');
 
@@ -20,6 +20,12 @@ suite('Extension Test Suite', () => {
         var textDocument = await vscode.workspace.openTextDocument(path.resolve(__dirname, 'mermaid.md'));
         await vscode.window.showTextDocument(textDocument);
         await vscode.commands.executeCommand('extension.markdown-pdf.all');
+
+        const html = fs.readFileSync(path.resolve(__dirname, 'mermaid.html'), 'utf-8');
+        assert.match(html, /class="katex"/);
+        assert.match(html, /class="katex-display"/);
+        assert.doesNotMatch(html, /class="katex-error"/);
+        assert.match(html, /data:font\/woff2;base64,/);
 
         fs.rmSync(path.resolve(__dirname, 'mermaid.pdf'), { force: true });
         fs.rmSync(path.resolve(__dirname, 'mermaid.jpeg'), { force: true });

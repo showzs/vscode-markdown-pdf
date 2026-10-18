@@ -38,12 +38,25 @@ This extension converts Markdown files to pdf, html, png or jpeg files.
 Supports the following features
 * [Syntax highlighting](https://highlightjs.org/static/demo/)
 * [emoji](https://www.webfx.com/tools/emoji-cheat-sheet/)
+* [KaTeX](https://katex.org/) math rendering (inline and display math)
 * [markdown-it-checkbox](https://github.com/mcecot/markdown-it-checkbox)
 * [markdown-it-container](https://github.com/markdown-it/markdown-it-container)
 * [markdown-it-include](https://github.com/camelaissani/markdown-it-include)
 * [PlantUML](https://plantuml.com/)
   * [markdown-it-plantuml](https://github.com/gmunguia/markdown-it-plantuml)
 * [mermaid](https://mermaid-js.github.io/mermaid/)
+
+### KaTeX
+
+Inline and display math are rendered with KaTeX, matching VS Code's Markdown preview:
+
+```markdown
+Inline: $\sqrt{3x-1}+(1+x)^2$
+
+$$
+\frac{a}{b}
+$$
+```
 
 Sample files
  * [pdf](sample/README.pdf)
