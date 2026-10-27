@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.3.1 (2026/10/27)
+* Add inline and display math rendering with KaTeX, including embedded styles and fonts in exported HTML
+* Update Markdown and related dependencies, including `markdown-it` and `puppeteer-core`
+* Fix a KaTeX prototype pollution security advisory
+
 ## 0.3.0 (2026/08/30)
 * Remove the legacy `puppeteer-core@2.1.1` runtime and update the modern runtime to `puppeteer-core@25.9.0`
 * Replace `gray-matter` with `yaml` for front matter parsing
